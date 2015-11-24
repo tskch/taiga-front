@@ -191,6 +191,9 @@ MarkitupDirective = ($rootscope, $rs, $selectedText, $template, $compile, $trans
                 if event.results[0].isFinal
                     final_transcript =  event.results[0][0].transcript
 
+                    final_transcript = final_transcript.replace("chicos", "chicos y chicas")
+                    final_transcript = final_transcript.replace("bug", "feature")
+
                     $.markItUp({ replaceWith: final_transcript })
 
             recognition.onerror = (event) ->
