@@ -177,6 +177,33 @@ MarkitupDirective = ($rootscope, $rs, $selectedText, $template, $compile, $trans
 
             return "\n"+heading+"\n"
 
+        audio = () ->
+            recognition = new webkitSpeechRecognition()
+            recognition.continuous = false
+            recognition.interimResults = true
+
+            recognition.onstart = () ->
+                console.log "start"
+
+            recognition.onresult = (event) ->
+                console.log "result", event.results[0]
+
+                if event.results[0].isFinal
+                    final_transcript =  event.results[0][0].transcript
+
+                    $.markItUp({ replaceWith: final_transcript })
+
+            recognition.onerror = (event) ->
+                console.log event
+
+            recognition.onend = () ->
+                console.log "end"
+
+            recognition.lang = "es-ES";
+
+            recognition.start()
+
+
         renderMarkItUp = () ->
             markdownSettings =
                 nameSpace: "markdown"
@@ -341,8 +368,8 @@ MarkitupDirective = ($rootscope, $rs, $selectedText, $template, $compile, $trans
                         separator: "---------------"
                     },
                     {
-                        name: $translate.instant("COMMON.WYSIWYG.PREVIEW_BUTTON")
-                        call: preview
+                        name:"Audio",
+                        call: audio,
                         className: "preview-icon"
                     },
                 ]
