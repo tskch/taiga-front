@@ -903,6 +903,17 @@
         "ASSIGN": "Assign User Story",
         "NOT_ESTIMATED": "Not estimated",
         "TOTAL_US_POINTS": "Total Us points",
+        "TRIBE": {
+            "PUBLISH": "Publish as Gig in Taiga Tribe",
+            "PUBLISH_INFO": "More info",
+            "PUBLISH_TITLE": "More info on publishing in Taiga Tribe",
+            "PUBLISHED_AS_GIG": "Story published as Gig in Taiga Tribe",
+            "EDIT_LINK": "Edit link",
+            "CLOSE": "Close",
+            "SYNCHRONIZE_LINK": "synchronize with Taiga Tribe",
+            "PUBLISH_MORE_INFO_TITLE": "Do you need somebody for this task?",
+            "PUBLISH_MORE_INFO_TEXT": "<p>Si necesitas ayuda para realizar una tarea puedes crear gigs en <a href='taigatribe.com' title='Taiga Tribe'> TaigaTribe </a> fácilmente y contar con ayuda de cualquier parte del mundo. Tienes control sobre la gestión del gig y una gran comunidad dispuesta a participar.</p><p><a href='taigatribe.com' title='Taiga Tribe'> TaigaTribe </a> nace como complemento a Taiga. Ambas plataformas pueden funcionar por separado, aunque creemos en el potencial de usarlas juntas, y por eso estamos cuidando mucho la integración.</p>"
+        },
         "FIELDS": {
             "TEAM_REQUIREMENT": "Team Requirement",
             "CLIENT_REQUIREMENT": "Client Requirement",
