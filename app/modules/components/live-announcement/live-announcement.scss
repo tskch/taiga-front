@@ -1,0 +1,51 @@
+// scss-lint:disable all
+
+.live-announcement {
+    align-content: center;
+    background: #98e0eb;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    width: 100%;
+    z-index: 99;
+}
+
+.live-announcement-inner {
+    display: flex;
+    max-width: 1200px;
+    .announcement-decoration {
+        align-self: flex-end;
+        margin-right: 1rem;
+    }
+    .text {
+        padding: 1.25rem;
+    }
+    .title {
+        @extend %bold;
+        @extend %larger;
+        color: #107a8a;
+        margin-bottom: .5rem;
+    }
+    .warning {
+        color: #107a8a;
+        a {
+            @extend %bold;
+            color: #107a8a;
+        }
+    }
+    .close {
+        height: 2.5rem;
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+        width: 2.5rem;
+        svg {
+            fill: #107a8a;
+            transition: fill .2s;
+            &:hover {
+                fill: darken(#107a8a, 10%);
+            }
+        }
+    }
+}
