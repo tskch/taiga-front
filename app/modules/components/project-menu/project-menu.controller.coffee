@@ -72,10 +72,15 @@ class ProjectMenuController
 
     _getActiveSection: () ->
         sectionName = @projectService.section
+
+        console.log "1---------" + sectionName
         sectionsBreadcrumb = @projectService.sectionsBreadcrumb
 
         indexBacklog = sectionsBreadcrumb.lastIndexOf("backlog")
         indexKanban = sectionsBreadcrumb.lastIndexOf("kanban")
+
+        console.log indexBacklog
+        console.log indexKanban
 
         if indexBacklog != -1 || indexKanban != -1
             if indexKanban == -1 || indexBacklog < indexKanban
@@ -90,6 +95,8 @@ class ProjectMenuController
                 sectionName = "backlog"
             else if !@.project.get("is_backlog_activated") && @.project.get("is_kanban_activated")
                 sectionName = "kanban"
+
+        console.log "2---------" + sectionName
 
         return sectionName
 
