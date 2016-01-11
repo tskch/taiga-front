@@ -73,8 +73,10 @@ class ProjectMenuController
     _getActiveSection: () ->
         sectionName = @projectService.section
 
+        console.log "-----------INIT---------------"
         console.log "1---------" + sectionName
         sectionsBreadcrumb = @projectService.sectionsBreadcrumb
+        console.log sectionsBreadcrumb.toJS()
 
         indexBacklog = sectionsBreadcrumb.lastIndexOf("backlog")
         indexKanban = sectionsBreadcrumb.lastIndexOf("kanban")
