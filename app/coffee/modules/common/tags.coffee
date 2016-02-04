@@ -87,7 +87,12 @@ ColorizeTagsDirective = ->
             html = template({tags: tags})
             $el.html(html)
 
+
         $scope.$watch $attrs.tgColorizeTags, (tags) ->
+            # is Immutable
+            if tags && tags.size
+                tags = tags.toJS()
+
             render(tags) if tags?
 
         $scope.$on "$destroy", ->

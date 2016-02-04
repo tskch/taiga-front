@@ -42,6 +42,7 @@ div.kanban-table(tg-kanban-squish-column)
     div.kanban-table-body
         div.kanban-table-inner
             div.kanban-uses-box.task-column(ng-class='{vfold:folds[s.id]}',
+                ng-if="usersById", // improve performance
                 ng-repeat="s in usStatusList track by s.id",
                 tg-kanban-sortable,
                 tg-kanban-wip-limit="s",
@@ -49,12 +50,19 @@ div.kanban-table(tg-kanban-squish-column)
                 tg-bind-scope
             )
                 div.kanban-task(
-                    ng-repeat="us in usByStatus[s.id] track by us.id",
                     tg-kanban-userstory,
-                    ng-model="us",
+                    tg-repeat="us in usByStatus.get(s.id.toString()) track by us.get('id')",
                     tg-bind-scope,
-                    tg-class-permission="{'readonly': '!modify_task'}"
-                    ng-class="{'kanban-task-maximized': ctrl.isMaximized(s.id), 'kanban-task-minimized': ctrl.isMinimized(s.id), 'card-placeholder': us.isPlaceholder}"
-                    placeholder="{{us.isPlaceholder}}"
+                    tg-class-permission="{'readonly': '!modify_task'}",
+                    ng-class="{'kanban-task-maximized': ctrl.isMaximized(s.id), 'kanban-task-minimized': ctrl.isMinimized(s.id), 'card-placeholder': us.get('isPlaceholder')}"
                 )
                 div.kanban-column-intro(ng-if="s.is_archived", tg-kanban-archived-status-intro="s")
+
+                //-     tg-kanban-userstory,
+                //-     ng-model="us",
+                //-     tg-bind-scope,
+                //-     tg-class-permission="{'readonly': '!modify_task'}"
+
+                //-     placeholder="{{us.isPlaceholder}}"
+                //- )
+                //- div.kanban-column-intro(ng-if="s.is_archived", tg-kanban-archived-status-intro="s")

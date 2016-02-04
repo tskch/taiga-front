@@ -196,8 +196,9 @@ updateScope(block.scope, index, valueIdentifier, immutable_value, keyIdentifier,
                     // We are using no-proto object so that we don't need to guard against inherited props via
                     // hasOwnProperty.
                     var lastBlockMap = createMap();
+
                     $scope.$watch(rhs, function ngRepeatAction(immutable_collection) {
-                        var collection = []
+                        var collection = [];
 
                         if (immutable_collection && immutable_collection.toJS) {
                             collection = immutable_collection.toJS();

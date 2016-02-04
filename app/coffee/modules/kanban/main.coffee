@@ -136,21 +136,24 @@ class KanbanController extends mixOf(taiga.Controller, taiga.PageMixin, taiga.Fi
         }
 
         promise = @rs.userstories.listAll(@scope.projectId, params).then (userstories) =>
-            @scope.userstories = userstories
+            console.log "load userstories"
 
             usByStatus = _.groupBy(userstories, "status")
             us_archived = []
-            for status in @scope.usStatusList
+
+            @scope.usByStatusRaw = [] if !@scope.usByStatusRaw
+
+            for status in @scope.usByStatusRaw
                 if not usByStatus[status.id]?
                     usByStatus[status.id] = []
-                if @scope.usByStatus?
-                    for us in @scope.usByStatus[status.id]
+                if @scope.usByStatusRaw?
+                    for us in @scope.usByStatusRaw[status.id]
                         if us.status != status.id
                             us_archived.push(us)
 
                 # Must preserve the archived columns if loaded
-                if status.is_archived and @scope.usByStatus? and @scope.usByStatus[status.id].length != 0
-                    for us in @scope.usByStatus[status.id].concat(us_archived)
+                if status.is_archived and @scope.usByStatusRaw? and @scope.usByStatusRaw[status.id].length != 0
+                    for us in @scope.usByStatusRaw[status.id].concat(us_archived)
                         if us.status == status.id
                             usByStatus[status.id].push(us)
 
@@ -160,10 +163,21 @@ class KanbanController extends mixOf(taiga.Controller, taiga.PageMixin, taiga.Fi
                 status = @scope.usStatusList[0]
                 usByStatus[status.id].push({isPlaceholder: true})
 
-            @scope.usByStatus = usByStatus
+            for status in @scope.usStatusList
+                if not usByStatus[status.id]?
+                    usByStatus[status.id] = []
 
-            # The broadcast must be executed when the DOM has been fully reloaded.
-            # We can't assure when this exactly happens so we need a defer
+                usByStatus[status.id] = usByStatus[status.id].map (us) ->
+                    return us._attrs
+
+
+            @scope.$applyAsync () => # performance
+                 @scope.usByStatus = Immutable.fromJS(usByStatus)
+                 @scope.usByStatusRaw = usByStatus
+                 @scope.userstories = userstories
+
+            # # The broadcast must be executed when the DOM has been fully reloaded.
+            # # We can't assure when this exactly happens so we need a defer
             scopeDefer @scope, =>
                 @scope.$broadcast("userstories:loaded", userstories)
 
@@ -420,11 +434,13 @@ KanbanUserstoryDirective = ($rootscope, $loading, $rs, $rs2) ->
     link = ($scope, $el, $attrs, $model) ->
         $el.disableSelection()
 
-        $scope.$watch "us", (us) ->
+        unwatch = $scope.$watch "us", (us) ->
             if us.is_blocked and not $el.hasClass("blocked")
                 $el.addClass("blocked")
             else if not us.is_blocked and $el.hasClass("blocked")
                 $el.removeClass("blocked")
+
+            unwatch()
 
         $el.on 'click', '.icon-edit', (event) ->
             if $el.find(".icon-edit").hasClass("noclick")
@@ -438,25 +454,18 @@ KanbanUserstoryDirective = ($rootscope, $loading, $rs, $rs2) ->
                 .removeClasses("icon-edit")
                 .start()
 
-            us = $model.$modelValue
+            us = $scope.us.toJS()
             $rs.userstories.getByRef(us.project, us.ref).then (editingUserStory) =>
                 $rs2.attachments.list("us", us.id, us.project).then (attachments) =>
                     $rootscope.$broadcast("usform:edit", editingUserStory, attachments.toJS())
                     currentLoading.finish()
 
-        $scope.getTemplateUrl = () ->
-            if $scope.us.isPlaceholder
-                return "common/components/kanban-placeholder.html"
-            else
-                return "kanban/kanban-task.html"
-
         $scope.$on "$destroy", ->
             $el.off()
 
     return {
-        template: '<ng-include src="getTemplateUrl()"/>',
+        templateUrl: 'kanban/kanban-task.html',
         link: link
-        require: "ngModel"
     }
 
 module.directive("tgKanbanUserstory", ["$rootScope", "$tgLoading", "$tgResources", "tgResources", KanbanUserstoryDirective])
@@ -538,20 +547,12 @@ KanbanUserDirective = ($log, $compile, $translate) ->
 
     clickable = false
 
-    link = ($scope, $el, $attrs, $model) ->
+    link = ($scope, $el, $attrs) ->
         username_label = $el.parent().find("a.task-assigned")
         username_label.addClass("not-clickable")
 
         if not $attrs.tgKanbanUserAvatar
             return $log.error "KanbanUserDirective: no attr is defined"
-
-        wtid = $scope.$watch $attrs.tgKanbanUserAvatar, (v) ->
-            if not $scope.usersById?
-                $log.error "KanbanUserDirective requires userById set in scope."
-                wtid()
-            else
-                user = $scope.usersById[v]
-                render(user)
 
         render = (user) ->
             if user is undefined
@@ -571,6 +572,15 @@ KanbanUserDirective = ($log, $compile, $translate) ->
             $el.html(html)
             username_label.text(ctx.name)
 
+
+        wtid = $scope.$watch $attrs.tgKanbanUserAvatar, (v) ->
+            if not $scope.usersById?
+                $log.error "KanbanUserDirective requires userById set in scope."
+                wtid()
+            else
+                user = $scope.usersById[v]
+                render(user)
+
         bindOnce $scope, "project", (project) ->
             if project.my_permissions.indexOf("modify_us") > -1
                 clickable = true
@@ -578,7 +588,7 @@ KanbanUserDirective = ($log, $compile, $translate) ->
                     if $el.find("a").hasClass("noclick")
                         return
 
-                    us = $model.$modelValue
+                    us = $scope.us.toJS()
                     $ctrl = $el.controller()
                     $ctrl.changeUsAssignedTo(us)
 
@@ -587,13 +597,10 @@ KanbanUserDirective = ($log, $compile, $translate) ->
                     if $el.find("a").hasClass("noclick")
                         return
 
-                    us = $model.$modelValue
+                    us = $scope.us.toJS()
                     $ctrl = $el.controller()
                     $ctrl.changeUsAssignedTo(us)
 
-        $scope.$on "$destroy", ->
-            $el.off()
-
-    return {link: link, require:"ngModel"}
+    return {link: link}
 
 module.directive("tgKanbanUserAvatar", ["$log", "$compile", "$translate", KanbanUserDirective])
