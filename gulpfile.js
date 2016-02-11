@@ -169,7 +169,6 @@ paths.libs = [
     paths.vendor + "l.js/l.js",
     paths.vendor + "messageformat/locale/*.js",
     paths.vendor + "ngInfiniteScroll/build/ng-infinite-scroll.js",
-    paths.vendor + "eventemitter2/lib/eventemitter2.js",
     paths.vendor + "immutable/dist/immutable.js",
     paths.vendor + "intro.js/intro.js",
     paths.app + "js/jquery.ui.git-custom.js",
