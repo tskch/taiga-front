@@ -27,7 +27,8 @@ var gulp = require("gulp"),
     del = require("del"),
     livereload = require('gulp-livereload'),
     gulpFilter = require('gulp-filter'),
-    addsrc = require('gulp-add-src');
+    addsrc = require('gulp-add-src'),
+    jsonminify = require('gulp-jsonminify'),
     coffeelint = require('gulp-coffeelint');
 
 var argv = require('minimist')(process.argv.slice(2));
@@ -154,7 +155,7 @@ paths.libs = [
     paths.vendor + "angular-translate-loader-partial/angular-translate-loader-partial.js",
     paths.vendor + "angular-translate-loader-static-files/angular-translate-loader-static-files.js",
     paths.vendor + "angular-translate-interpolation-messageformat/angular-translate-interpolation-messageformat.js",
-    paths.vendor + "moment/min/moment-with-locales.js",
+    paths.vendor + "moment/moment.js",
     paths.vendor + "checksley/checksley.js",
     paths.vendor + "pikaday/pikaday.js",
     paths.vendor + "jquery-flot/jquery.flot.js",
@@ -164,7 +165,6 @@ paths.libs = [
     paths.vendor + "flot.tooltip/js/jquery.flot.tooltip.js",
     paths.vendor + "jquery-textcomplete/dist/jquery.textcomplete.js",
     paths.vendor + "markitup-1x/markitup/jquery.markitup.js",
-    paths.vendor + "malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js",
     paths.vendor + "raven-js/dist/raven.js",
     paths.vendor + "l.js/l.js",
     paths.vendor + "messageformat/locale/*.js",
@@ -214,6 +214,7 @@ gulp.task("copy-index", function() {
 gulp.task("template-cache", function() {
     return gulp.src(paths.htmlPartials)
         .pipe(templateCache({standalone: true}))
+        .pipe(gulpif(isDeploy, uglify()))
         .pipe(gulp.dest(paths.distVersion + "js/"))
         .pipe(gulpif(!isDeploy, livereload()));
 });
@@ -374,11 +375,13 @@ gulp.task("app-loader", function() {
     return gulp.src("app-loader/app-loader.coffee")
         .pipe(replace("___VERSION___", version))
         .pipe(coffee())
+        .pipe(gulpif(isDeploy, uglify()))
         .pipe(gulp.dest(paths.distVersion + "js/"));
 });
 
 gulp.task("locales", function() {
     return gulp.src(paths.locales)
+        .pipe(gulpif(isDeploy, jsonminify()))
         .pipe(gulp.dest(paths.distVersion + "locales"));
 });
 
@@ -421,6 +424,12 @@ gulp.task("coffee", function() {
         .pipe(livereload());
 });
 
+gulp.task("moment-locales", function() {
+    return gulp.src(paths.vendor + "moment/locale/*")
+        .pipe(gulpif(isDeploy, uglify()))
+        .pipe(gulp.dest(paths.distVersion + "locales/moment-locales/"));
+});
+
 gulp.task("jslibs-watch", function() {
     return gulp.src(paths.libs)
         .pipe(plumber())
@@ -433,17 +442,17 @@ gulp.task("jslibs-deploy", function() {
         .pipe(plumber())
         .pipe(sourcemaps.init())
         .pipe(concat("libs.js"))
-        .pipe(uglify({mangle:false, preserveComments: false}))
+        .pipe(uglify())
         .pipe(sourcemaps.write("./maps"))
         .pipe(gulp.dest(paths.distVersion + "js/"));
 });
 
-gulp.task("app-watch", ["coffee", "conf", "locales", "app-loader"]);
+gulp.task("app-watch", ["coffee", "conf", "locales", "moment-locales", "app-loader"]);
 
-gulp.task("app-deploy", ["coffee", "conf", "locales", "app-loader"], function() {
+gulp.task("app-deploy", ["coffee", "conf", "locales", "moment-locales", "app-loader"], function() {
     return gulp.src(paths.distVersion + "js/app.js")
         .pipe(sourcemaps.init())
-            .pipe(uglify({mangle:false, preserveComments: false}))
+            .pipe(uglify())
         .pipe(sourcemaps.write("./maps"))
         .pipe(gulp.dest(paths.distVersion + "js/"));
 });
@@ -515,7 +524,11 @@ gulp.task("delete-tmp", function() {
 
 gulp.task("express", function() {
     var express = require("express");
+    var compression = require('compression');
+
     var app = express();
+
+    app.use(compression()); //gzip
 
     app.use("/" + version + "/js", express.static(__dirname + "/dist/" + version + "/js"));
     app.use("/" + version + "/styles", express.static(__dirname + "/dist/" + version + "/styles"));
@@ -560,7 +573,9 @@ gulp.task("deploy", function(cb) {
         "jade-deploy",
         "app-deploy",
         "jslibs-deploy",
-        "compile-themes"
+        "compile-themes",
+        "express",
+        "watch"
     ], cb);
 });
 //The default task (called when you run gulp from cli)
