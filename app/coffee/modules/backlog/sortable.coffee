@@ -48,92 +48,168 @@ BacklogSortableDirective = ($repo, $rs, $rootscope, $tgConfirm, $translate) ->
     # helper-in-wrong-place-when-scrolled-down-page
 
     link = ($scope, $el, $attrs) ->
-        getUsIndex = (us) =>
-            return $(us).index(".backlog-table-body .row")
-
         bindOnce $scope, "project", (project) ->
             # If the user has not enough permissions we don't enable the sortable
             if not (project.my_permissions.indexOf("modify_us") > -1)
                 return
 
+            initIsBacklog = false
+
             filterError = ->
                 text = $translate.instant("BACKLOG.SORTABLE_FILTER_ERROR")
                 $tgConfirm.notify("error", text)
 
-            $el.sortable({
-                items: ".us-item-row",
-                cancel: ".popover"
-                connectWith: ".sprint"
-                dropOnEmpty: true
-                placeholder: "row us-item-row us-item-drag sortable-placeholder"
-                scroll: true
-                disableHorizontalScroll: true
-                # A consequence of length of backlog user story item
-                # the default tolerance ("intersection") not works properly.
-                tolerance: "pointer"
-                # Revert on backlog is disabled bacause it works bad. Something
-                # on the current taiga backlog structure or style makes jquery ui
-                # works unexpectly (in some circumstances calculates wrong
-                # position for revert).
-                revert: false
-                start: () ->
-                    $(document.body).addClass("drag-active")
-                stop: () ->
-                    $(document.body).removeClass("drag-active")
-
-                    if $el.hasClass("active-filters")
-                        $el.sortable("cancel")
-                        filterError()
+            drake = dragula([$el[0]], {
+                copy: false,
+                mirrorContainer: $el[0],
+                isContainer: (el) -> return el.classList.contains('sprint-table')
             })
 
-            $el.on "multiplesortreceive", (event, ui) ->
+            drake.on 'drag', (item, container) ->
+                parent = $(item).parent()
+                initIsBacklog = parent.hasClass('backlog-table-body')
+
+                window.dragMultiple.prepare(item, container)
+
+                $(document.body).addClass("drag-active")
+
+                isChecked = $(item).find("input[type='checkbox']").is(":checked")
+
+                window.dragMultiple.start()
+
+            drake.on 'dragend', (item) ->
+                parent = $(item).parent()
+                isBacklog = parent.hasClass('backlog-table-body')
+
+                sameContainer = (initIsBacklog == isBacklog)
+
+                dragMultipleItems = window.dragMultiple.stop()
+
+                $(document.body).removeClass("drag-active")
+
+                # solo cuando recibe¿?
                 if $el.hasClass("active-filters")
-                    ui.source.sortable("cancel")
                     filterError()
 
-                    return
+                items = $(item).parent().find('.row')
 
-                itemUs = ui.item.scope().us
-                itemIndex = getUsIndex(ui.item)
-
-                deleteElement(ui.item)
-
-                $scope.$emit("sprint:us:move", [itemUs], itemIndex, null)
-                ui.item.find('a').removeClass('noclick')
-
-            $el.on "multiplesortstop", (event, ui) ->
-                # When parent not exists, do nothing
-                if $(ui.items[0]).parent().length == 0
-                    return
-
-                if $el.hasClass("active-filters")
-                    return
-
-                items = _.sortBy ui.items, (item) ->
-                    return $(item).index()
-
-                index = _.min _.map items, (item) ->
-                    return getUsIndex(item)
-
-                us = _.map items, (item) ->
+                sprint = null
+                usList = _.map items, (item) ->
                     item = $(item)
                     itemUs = item.scope().us
 
-                    # HACK: setTimeout prevents that firefox click
-                    # event fires just after drag ends
-                    setTimeout ( =>
-                        item.find('a').removeClass('noclick')
-                    ), 300
-
                     return itemUs
 
-                $scope.$emit("sprint:us:move", us, index, null)
+                if isBacklog
+                    index = $(item).index(".backlog-table-body .row")
+                else
+                    index = $(item).index()
+                    sprint = parent.scope().sprint.id
 
-            $el.on "sortstart", (event, ui) ->
-                ui.item.find('a').addClass('noclick')
+                console.log "move"
+                # console.log usList
+                console.log index
+                console.log sprint
 
-        $scope.$on "$destroy", ->
-            $el.off()
+                if !sameContainer
+                    usList = _.map dragMultipleItems, (item) ->
+                        item = $(item)
+                        itemUs = item.scope().us
+
+                        return itemUs
+
+                    console.log usList
+
+                    $scope.$emit("sprint:us:move", usList, index, sprint)
+                    #$(dragMultipleItems).remove()
+                    #$(item).remove()
+                else
+                    $scope.$emit("sprint:us:move", usList, index, sprint)
+
+            scroll = autoScroll([window], {
+                margin: 20,
+                pixels: 30,
+                scrollWhenOutside: true,
+                autoScroll: () ->
+                    return this.down && drake.dragging;
+            })
+
+           #  $el.sortable({
+        #         items: ".us-item-row",
+        #         cancel: ".popover"
+        #         connectWith: ".sprint"
+        #         dropOnEmpty: true
+        #         placeholder: "row us-item-row us-item-drag sortable-placeholder"
+        #         scroll: true
+        #         disableHorizontalScroll: true
+        #         # A consequence of length of backlog user story item
+        #         # the default tolerance ("intersection") not works properly.
+        #         tolerance: "pointer"
+        #         # Revert on backlog is disabled bacause it works bad. Something
+        #         # on the current taiga backlog structure or style makes jquery ui
+        #         # works unexpectly (in some circumstances calculates wrong
+        #         # position for revert).
+        #         revert: false
+        #         start: () ->
+        #             $(document.body).addClass("drag-active")
+        #         stop: () ->
+        #             $(document.body).removeClass("drag-active")
+
+        #             if $el.hasClass("active-filters")
+        #                 $el.sortable("cancel")
+        #                 filterError()
+        #     })
+
+        #     $el.on "multiplesortreceive", (event, ui) ->
+        #         if $el.hasClass("active-filters")
+        #             ui.source.sortable("cancel")
+        #             filterError()
+
+        #             return
+
+        #         itemUs = ui.item.scope().us
+        #         itemIndex = getUsIndex(ui.item)
+
+        #         deleteElement(ui.item)
+
+        #         console.log [itemUs], itemIndex
+        #         $scope.$emit("sprint:us:move", [itemUs], itemIndex, null)
+        #         ui.item.find('a').removeClass('noclick')
+
+        #     $el.on "multiplesortstop", (event, ui) ->
+        #         # When parent not exists, do nothing
+        #         if $(ui.items[0]).parent().length == 0
+        #             return
+
+        #         if $el.hasClass("active-filters")
+        #             return
+
+        #         items = _.sortBy ui.items, (item) ->
+        #             return $(item).index()
+
+        #         index = _.min _.map items, (item) ->
+        #             return getUsIndex(item)
+
+        #         us = _.map items, (item) ->
+        #             item = $(item)
+        #             itemUs = item.scope().us
+
+        #             # HACK: setTimeout prevents that firefox click
+        #             # event fires just after drag ends
+        #             setTimeout ( =>
+        #                 item.find('a').removeClass('noclick')
+        #             ), 300
+
+        #             return itemUs
+
+        #         console.log us, index
+        #         $scope.$emit("sprint:us:move", us, index, null)
+
+        #     $el.on "sortstart", (event, ui) ->
+        #         ui.item.find('a').addClass('noclick')
+
+        # $scope.$on "$destroy", ->
+        #     $el.off()
 
     return {link: link}
 
@@ -145,20 +221,20 @@ BacklogEmptySortableDirective = ($repo, $rs, $rootscope) ->
     link = ($scope, $el, $attrs) ->
         bindOnce $scope, "project", (project) ->
             # If the user has not enough permissions we don't enable the sortable
-            if project.my_permissions.indexOf("modify_us") > -1
-                $el.sortable({
-                    items: ".us-item-row",
-                    dropOnEmpty: true
-                })
+            # if project.my_permissions.indexOf("modify_us") > -1
+                # $el.sortable({
+                #     items: ".us-item-row",
+                #     dropOnEmpty: true
+                # })
 
-                $el.on "sortreceive", (event, ui) ->
-                    itemUs = ui.item.scope().us
-                    itemIndex = ui.item.index()
+                # $el.on "sortreceive", (event, ui) ->
+                #     itemUs = ui.item.scope().us
+                #     itemIndex = ui.item.index()
 
-                    deleteElement(ui.item)
-                    $scope.$emit("sprint:us:move", [itemUs], itemIndex, null)
+                #     deleteElement(ui.item)
+                #     $scope.$emit("sprint:us:move", [itemUs], itemIndex, null)
 
-                    ui.item.find('a').removeClass('noclick')
+                #     ui.item.find('a').removeClass('noclick')
 
         $scope.$on "$destroy", ->
             $el.off()
@@ -170,52 +246,53 @@ SprintSortableDirective = ($repo, $rs, $rootscope) ->
     link = ($scope, $el, $attrs) ->
         bindOnce $scope, "project", (project) ->
             # If the user has not enough permissions we don't enable the sortable
-            if project.my_permissions.indexOf("modify_us") > -1
-                $el.sortable({
-                    scroll: true
-                    dropOnEmpty: true
-                    items: ".sprint-table .milestone-us-item-row"
-                    disableHorizontalScroll: true
-                    connectWith: ".sprint,.backlog-table-body,.empty-backlog"
-                    placeholder: "row us-item-row sortable-placeholder"
-                    forcePlaceholderSize:true
-                })
+            # if project.my_permissions.indexOf("modify_us") > -1
+                # $el.sortable({
+                #     scroll: true
+                #     dropOnEmpty: true
+                #     items: ".sprint-table .milestone-us-item-row"
+                #     disableHorizontalScroll: true
+                #     connectWith: ".sprint,.backlog-table-body,.empty-backlog"
+                #     placeholder: "row us-item-row sortable-placeholder"
+                #     forcePlaceholderSize:true
+                # })
 
-                $el.on "multiplesortreceive", (event, ui) ->
-                    items = _.sortBy ui.items, (item) ->
-                        return $(item).index()
+                # $el.on "multiplesortreceive", (event, ui) ->
+                #     items = _.sortBy ui.items, (item) ->
+                #         return $(item).index()
 
-                    index = _.min _.map items, (item) ->
-                        return $(item).index()
+                #     index = _.min _.map items, (item) ->
+                #         return $(item).index()
 
-                    us = _.map items, (item) ->
-                        item = $(item)
-                        itemUs = item.scope().us
+                #     us = _.map items, (item) ->
+                #         item = $(item)
+                #         itemUs = item.scope().us
 
-                        deleteElement(item)
+                #         deleteElement(item)
 
-                        return itemUs
+                #         return itemUs
 
-                    $scope.$emit("sprint:us:move", us, index, $scope.sprint.id)
+                #     console.log us, index, $scope.sprint.id
+                #     $scope.$emit("sprint:us:move", us, index, $scope.sprint.id)
 
-                $el.on "multiplesortstop", (event, ui) ->
-                    # When parent not exists, do nothing
-                    if ui.item.parent().length == 0
-                        return
+                # $el.on "multiplesortstop", (event, ui) ->
+                #     # When parent not exists, do nothing
+                #     if ui.item.parent().length == 0
+                #         return
 
-                    itemUs = ui.item.scope().us
-                    itemIndex = ui.item.index()
+                #     itemUs = ui.item.scope().us
+                #     itemIndex = ui.item.index()
 
-                    # HACK: setTimeout prevents that firefox click
-                    # event fires just after drag ends
-                    setTimeout ( =>
-                        ui.item.find('a').removeClass('noclick')
-                    ), 300
+                #     # HACK: setTimeout prevents that firefox click
+                #     # event fires just after drag ends
+                #     setTimeout ( =>
+                #         ui.item.find('a').removeClass('noclick')
+                #     ), 300
 
-                    $scope.$emit("sprint:us:move", [itemUs], itemIndex, $scope.sprint.id)
+                #     $scope.$emit("sprint:us:move", [itemUs], itemIndex, $scope.sprint.id)
 
-                $el.on "sortstart", (event, ui) ->
-                    ui.item.find('a').addClass('noclick')
+                # $el.on "sortstart", (event, ui) ->
+                #     ui.item.find('a').addClass('noclick')
 
     return {link:link}
 

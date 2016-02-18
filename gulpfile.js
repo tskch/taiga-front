@@ -66,7 +66,8 @@ paths.images = paths.app + "images/**/*";
 paths.svg = paths.app + "svg/**/*";
 paths.css_vendor = [
     paths.app + "styles/vendor/*.css",
-    paths.vendor + "intro.js/introjs.css"
+    paths.vendor + "intro.js/introjs.css",
+    paths.vendor + "dragula.js/dist/dragula.css"
 ];
 paths.locales = paths.app + "locales/**/*.json";
 
@@ -171,6 +172,9 @@ paths.libs = [
     paths.vendor + "ngInfiniteScroll/build/ng-infinite-scroll.js",
     paths.vendor + "immutable/dist/immutable.js",
     paths.vendor + "intro.js/intro.js",
+    paths.vendor + "dragula.js/dist/dragula.js",
+    paths.app + "js/dom-autoscroller.js",
+
     paths.app + "js/jquery.ui.git-custom.js",
     paths.app + "js/jquery-ui.drag-multiple-custom.js",
     paths.app + "js/jquery.ui.touch-punch.min.js",

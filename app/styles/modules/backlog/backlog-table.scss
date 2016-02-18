@@ -165,7 +165,7 @@
         &:last-child {
             border-bottom: 0;
         }
-        &.ui-sortable-helper {
+        &.gu-mirror {
             background: lighten($primary, 60%);
             box-shadow: 1px 1px 10px rgba($black, .1);
             opacity: .9;

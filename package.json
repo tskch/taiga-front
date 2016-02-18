@@ -88,5 +88,8 @@
   },
   "pre-commit": [
     "scss-lint"
-  ]
+  ],
+  "dependencies": {
+    "dom-autoscroller": "^1.2.3"
+  }
 }
