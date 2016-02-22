@@ -201,6 +201,7 @@ ProjectModulesDirective = ($repo, $confirm, $loading, projectService) ->
             return if not form.validate()
 
             target = angular.element(".admin-functionalities .submit-button")
+            console.log 'sending...'
             currentLoading = $loading()
                 .target(target)
                 .start()
@@ -208,7 +209,6 @@ ProjectModulesDirective = ($repo, $confirm, $loading, projectService) ->
             promise = $repo.save($scope.project)
             promise.then ->
                 currentLoading.finish()
-                $confirm.notify("success")
                 $scope.$emit("project:loaded", $scope.project)
 
                 projectService.fetchProject()
@@ -222,6 +222,10 @@ ProjectModulesDirective = ($repo, $confirm, $loading, projectService) ->
             submit()
 
         $el.on "click", ".admin-functionalities a.button-green", (event) ->
+            event.preventDefault()
+            submit()
+
+        $el.on "change", ".module-activation input", (event) ->
             event.preventDefault()
             submit()
 

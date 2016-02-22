@@ -438,7 +438,7 @@
             "MEETUP": "Meet Up",
             "MEETUP_DESCRIPTION": "Choose your videoconference system. Even developers need face to face contact.",
             "SELECT_VIDEOCONFERENCE": "Select a videoconference system",
-            "SALT_CHAT_ROOM": "If you want you can append a salt code to the name of the chat room",
+            "SALT_CHAT_ROOM": "Add a prefix to the name of your chat room",
             "JITSI_CHAT_ROOM": "Jitsi",
             "APPEARIN_CHAT_ROOM": "AppearIn",
             "TALKY_CHAT_ROOM": "Talky",
