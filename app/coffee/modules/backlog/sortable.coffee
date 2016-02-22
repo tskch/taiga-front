@@ -107,7 +107,7 @@ BacklogSortableDirective = ($repo, $rs, $rootscope, $tgConfirm, $translate) ->
                     sprint = parent.scope().sprint.id
 
                 console.log "move"
-                # console.log usList
+                console.log usList
                 console.log index
                 console.log sprint
 
@@ -117,6 +117,9 @@ BacklogSortableDirective = ($repo, $rs, $rootscope, $tgConfirm, $translate) ->
                         itemUs = item.scope().us
 
                         return itemUs
+
+                    if !usList.length
+                        usList = [$(item).scope().us]
 
                     console.log usList
 
